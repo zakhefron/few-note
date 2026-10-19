@@ -130,39 +130,48 @@ struct FewNoteIcon {
             y += pitch
             row += 1
         }
-        context.setFillColor(NSColor.white.withAlphaComponent(0.10).cgColor)
+        context.setFillColor(NSColor.white.withAlphaComponent(0.06).cgColor)
         context.addPath(path)
         context.fillPath()
     }
 
     /// The wordmark: the app's name in the app's own face, blooming the way lit dots do.
+    /// Drawn on two lines ("Few" / "Note") so the name stays legible at small sizes.
     static func drawWordmark(in context: CGContext, plate: CGRect) {
-        let word = plate.width >= 110 ? "FewNote" : "F"
-        let characters = Array(word)
-        let columnsAcross = characters.count * (GlyphFont.columns + 1) - 1
+        let lines = plate.width >= 110 ? ["Few", "Note"] : ["F"]
+        let maxColumns = lines.map { $0.count * (GlyphFont.columns + 1) - 1 }.max() ?? 1
+        let gapRows = 1
+        let totalRows = lines.count * (GlyphFont.rows - 1) + (lines.count - 1) * gapRows
 
-        let pitch = min(plate.width * 0.64 / CGFloat(columnsAcross),
-                        plate.height * 0.58 / CGFloat(GlyphFont.rows))
-        let height = CGFloat(GlyphFont.rows - 1) * pitch
-        let origin = CGPoint(x: plate.midX - CGFloat(columnsAcross) * pitch / 2,
-                             y: plate.midY - height / 2)
-        let radius = pitch * 0.34
+        let pitch = min(plate.width * 0.78 / CGFloat(maxColumns),
+                        plate.height * 0.72 / CGFloat(totalRows))
+        let lineSpan = CGFloat(GlyphFont.rows - 1) * pitch
+        let totalHeight = CGFloat(totalRows) * pitch
+        let topOriginY = plate.midY - totalHeight / 2
+        let radius = pitch * 0.42
 
         let dots = CGMutablePath()
-        for (index, character) in characters.enumerated() {
-            let pen = origin.x + CGFloat(index * (GlyphFont.columns + 1)) * pitch
-            for dot in GlyphFont.litDots(for: character) {
-                let centre = CGPoint(x: pen + (CGFloat(dot.column) + 0.5) * pitch,
-                                     y: origin.y + (CGFloat(GlyphFont.rows - 1 - dot.row) + 0.5) * pitch)
-                dots.addEllipse(in: CGRect(x: centre.x - radius, y: centre.y - radius,
-                                           width: radius * 2, height: radius * 2))
+        for (lineIndex, word) in lines.enumerated() {
+            let characters = Array(word)
+            let columnsAcross = characters.count * (GlyphFont.columns + 1) - 1
+            let lineTop = topOriginY + CGFloat(lines.count - 1 - lineIndex)
+                          * (lineSpan + CGFloat(gapRows) * pitch)
+            let penBase = plate.midX - CGFloat(columnsAcross) * pitch / 2
+            for (index, character) in characters.enumerated() {
+                let pen = penBase + CGFloat(index * (GlyphFont.columns + 1)) * pitch
+                for dot in GlyphFont.litDots(for: character) {
+                    let centre = CGPoint(x: pen + (CGFloat(dot.column) + 0.5) * pitch,
+                                         y: lineTop + (CGFloat(GlyphFont.rows - 1 - dot.row) + 0.5) * pitch)
+                    dots.addEllipse(in: CGRect(x: centre.x - radius, y: centre.y - radius,
+                                               width: radius * 2, height: radius * 2))
+                }
             }
         }
 
         let ink = NSColor(srgbRed: 0.97, green: 0.97, blue: 0.98, alpha: 1).cgColor
         context.setFillColor(ink)
         // A tight pass right at the strokes, then a wide faint one: the app's own bloom.
-        for (blur, alpha) in [(pitch * 1.1, 0.55), (pitch * 3.2, 0.30)] {
+        for (blur, alpha) in [(pitch * 1.3, 0.62), (pitch * 3.6, 0.38)] {
             context.setShadow(offset: .zero, blur: blur,
                               color: NSColor.white.withAlphaComponent(CGFloat(alpha)).cgColor)
             context.addPath(dots)
