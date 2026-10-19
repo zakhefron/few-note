@@ -159,6 +159,8 @@ catalogue is kept complete.
 Requires macOS 13+ and the Swift toolchain (Xcode or Command Line Tools).
 
 ```sh
+git clone https://github.com/zakhefron/few-note.git
+cd few-note
 ./scripts/build.sh          # release build -> build/FewNote.app
 open build/FewNote.app      # run it
 ```
