@@ -1,0 +1,64 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:few-note}",
+            "name": "Debug FewNoteIcon",
+            "target": "FewNoteIcon",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug FewNoteIcon"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:few-note}",
+            "name": "Release FewNoteIcon",
+            "target": "FewNoteIcon",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release FewNoteIcon"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:few-note}",
+            "name": "Debug FewNoteChecks",
+            "target": "FewNoteChecks",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug FewNoteChecks"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:few-note}",
+            "name": "Release FewNoteChecks",
+            "target": "FewNoteChecks",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release FewNoteChecks"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:few-note}",
+            "name": "Debug FewNote",
+            "target": "FewNote",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug FewNote"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:few-note}",
+            "name": "Release FewNote",
+            "target": "FewNote",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release FewNote"
+        }
+    ]
+}

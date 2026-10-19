@@ -50,12 +50,12 @@ struct FewNoteIcon {
                     pngs[pixels] = data
                 }
                 body.append(contentsOf: type.utf8.prefix(4))
-                var length = UInt32(8 + pngs[pixels]!.count).bigEndian
+                let length = UInt32(8 + pngs[pixels]!.count).bigEndian
                 withUnsafeBytes(of: length) { body.append(contentsOf: $0) }
                 body.append(pngs[pixels]!)
             }
             var packed = Data("icns".utf8)
-            var total = UInt32(8 + body.count).bigEndian
+            let total = UInt32(8 + body.count).bigEndian
             withUnsafeBytes(of: total) { packed.append(contentsOf: $0) }
             packed.append(body)
 

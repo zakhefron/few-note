@@ -24,7 +24,6 @@ struct Wordmark: View {
 
     var body: some View {
         Canvas { context, _ in
-            let lineCount = CGFloat(lines.count)
             let lineHeight = CGFloat(GlyphFont.rows) * spacing - spacing
             var yBase: CGFloat = 0
             for line in lines {
