@@ -3,7 +3,7 @@
 An ultra-lightweight, native macOS notepad. Open it, type, close it. That's it.
 
 FewNote's home on the web — with the one-line installer — is at
-**[few-note-site.vercel.app](https://few-note-site.vercel.app)**.
+**[zakhefron.github.io/few-note-site](https://zakhefron.github.io/few-note-site/)**.
 
 Built with Swift and SwiftUI (plus a small amount of AppKit for the text surface). No third-party
 packages, no web views, no accounts, no analytics, no network access.
