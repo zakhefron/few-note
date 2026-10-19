@@ -7,38 +7,60 @@ import FewNoteKit
 /// so the icon in the Dock is made of the same stuff as the note on the screen. Small sizes get
 /// the single letter instead: seven letters at thirty-two pixels is a smudge, not a name.
 ///
+/// The `.icns` is packed here rather than through `iconutil`: the format is a four-byte type and
+/// a byte length ahead of each PNG, and packing it needs no system service — which keeps the
+/// icon buildable wherever the rest of the app is.
+///
 ///     FewNoteIcon <output.icns>
 @main
 struct FewNoteIcon {
 
-    /// The sizes macOS asks an app icon for. `iconutil` wants each of them twice, once at 1× and
-    /// once at 2×, so the same pixels are rendered once and written twice under different names.
-    static let sizes = [16, 32, 64, 128, 256]
+    /// Every representation the Dock and Finder may ask for, as an `.icns` type and the pixel
+    /// size behind it, capped at 256 to keep the icon lean. The 2× slots reuse the pixels of a
+    /// larger 1× size — which is what an iconset's `@2x` names mean anyway.
+    static let entries: [(type: String, pixels: Int)] = [
+        ("icp4", 16),    // 16×16
+        ("icp5", 32),    // 32×32
+        ("ic11", 32),    // 16×16 @2x
+        ("ic12", 64),    // 32×32 @2x
+        ("ic07", 128),   // 128×128
+        ("ic13", 256),   // 128×128 @2x
+        ("ic08", 256),   // 256×256
+    ]
 
     static func main() {
         let output = URL(fileURLWithPath: CommandLine.arguments.count > 1
                          ? CommandLine.arguments[1]
                          : "AppIcon.icns")
 
-        let iconset = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FewNote-\(UUID().uuidString).iconset", isDirectory: true)
-        defer { try? FileManager.default.removeItem(at: iconset) }
-
         do {
-            try FileManager.default.createDirectory(at: iconset, withIntermediateDirectories: true)
-            for size in sizes {
-                guard let data = render(size: size) else {
-                    throw Failure("could not render the \(size) pixel icon")
-                }
-                for name in names(for: size) {
-                    try data.write(to: iconset.appendingPathComponent(name))
-                }
-            }
-
             try FileManager.default.createDirectory(at: output.deletingLastPathComponent(),
                                                     withIntermediateDirectories: true)
-            try run("/usr/bin/iconutil", ["-c", "icns", iconset.path, "-o", output.path])
-            print("Icon: \(output.path)")
+
+            // One render per pixel size; the entries that share pixels share the PNG. The
+            // container is the whole format: "icns", the total length, then per entry the type,
+            // the entry's length, and the PNG itself, all lengths big-endian.
+            var pngs: [Int: Data] = [:]
+            var body = Data()
+            for (type, pixels) in entries {
+                if pngs[pixels] == nil {
+                    guard let data = render(size: pixels) else {
+                        throw Failure("could not render the \(pixels) pixel icon")
+                    }
+                    pngs[pixels] = data
+                }
+                body.append(contentsOf: type.utf8.prefix(4))
+                var length = UInt32(8 + pngs[pixels]!.count).bigEndian
+                withUnsafeBytes(of: length) { body.append(contentsOf: $0) }
+                body.append(pngs[pixels]!)
+            }
+            var packed = Data("icns".utf8)
+            var total = UInt32(8 + body.count).bigEndian
+            withUnsafeBytes(of: total) { packed.append(contentsOf: $0) }
+            packed.append(body)
+
+            try packed.write(to: output)
+            print("Icon: \(output.path) (\(packed.count) bytes)")
         } catch {
             FileHandle.standardError.write("FewNoteIcon: \(error)\n".data(using: .utf8)!)
             exit(1)
@@ -48,20 +70,6 @@ struct FewNoteIcon {
     struct Failure: Error, CustomStringConvertible {
         let description: String
         init(_ description: String) { self.description = description }
-    }
-
-    /// The `.iconset` file names a rendered size is written under.
-    static func names(for size: Int) -> [String] {
-        switch size {
-        case 16: return ["icon_16x16.png"]
-        case 32: return ["icon_16x16@2x.png", "icon_32x32.png"]
-        case 64: return ["icon_32x32@2x.png"]
-        case 128: return ["icon_128x128.png"]
-        case 256: return ["icon_128x128@2x.png", "icon_256x256.png"]
-        case 512: return ["icon_256x256@2x.png", "icon_512x512.png"]
-        case 1024: return ["icon_512x512@2x.png"]
-        default: return []
-        }
     }
 
     // MARK: - Drawing
