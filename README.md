@@ -19,6 +19,12 @@
 
 [Website](https://zakhefron.github.io/few-note-site/) · [Install](#install) · [Build from source](#build-and-run)
 
+Install in one line — builds once on this Mac (about a minute), installs to `/Applications`:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/zakhefron/few-note/main/install.sh | sh
+```
+
 </div>
 
 ---
@@ -30,7 +36,9 @@ app that starts instantly and writes plain files. This is the project's README; 
 
 ## Install
 
-One line — it clones, builds on this Mac, and puts the app in `/Applications`:
+One line — it fetches the sources into `~/Library/Caches/FewNote`, builds once (about a
+minute), and puts the app in `/Applications`. Later installs rebuild only what changed, in
+seconds:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/zakhefron/few-note/main/install.sh | sh
