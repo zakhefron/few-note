@@ -5,6 +5,12 @@ An ultra-lightweight, native macOS notepad. Open it, type, close it. That's it.
 FewNote's home on the web — with the one-line installer — is at
 **[zakhefron.github.io/few-note-site](https://zakhefron.github.io/few-note-site/)**.
 
+Install in one line (clones, builds on this Mac, installs to `/Applications`; see [Install](#install)):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/zakhefron/few-note/main/install.sh | sh
+```
+
 Built with Swift and SwiftUI (plus a small amount of AppKit for the text surface). No third-party
 packages, no web views, no accounts, no analytics, no network access.
 
