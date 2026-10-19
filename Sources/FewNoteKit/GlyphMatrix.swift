@@ -747,11 +747,12 @@ final class GlyphMatrixTextView: NSTextView {
     /// The character the caret is sitting on, if any.
     private var characterAtCaret: Character? {
         guard !showsCaretCell else { return nil }
-        let text = string
+        let nsText = string as NSString
         let location = selectedRange().location
-        guard location < (text as NSString).length,
-              let index = text.index(text.startIndex, offsetBy: location, limitedBy: text.endIndex) else { return nil }
-        return text[index]
+        guard location >= 0, location < nsText.length else { return nil }
+        let range = nsText.rangeOfComposedCharacterSequence(at: location)
+        let substring = nsText.substring(with: range)
+        return substring.isEmpty ? nil : Character(substring)
     }
 
     /// The caret cell for wherever the caret is right now.
@@ -857,6 +858,7 @@ final class GlyphMatrixTextView: NSTextView {
         guard let context = NSGraphicsContext.current?.cgContext else { return }
         drawBloom(in: dirtyRect, into: context)
         drawLitDots(in: dirtyRect, into: context)
+        drawEmoji(in: dirtyRect, into: context)
         drawCaret(in: dirtyRect, into: context)
     }
 
@@ -1058,6 +1060,8 @@ final class GlyphMatrixTextView: NSTextView {
         let lit = litCount ?? Int.max
 
         walkCharacters(in: viewRect) { character, location, style, decor, tint, colour, origin in
+            // Emoji are drawn as the real glyph, not as dots, so they take no part in the bloom.
+            guard !GlyphFont.isEmoji(character) else { return }
             // What has not been struck yet takes no part in the bloom either.
             guard location < lit else { return }
             let strike = Strike(style: style, colour: colour, decor: decor)
@@ -1093,6 +1097,8 @@ final class GlyphMatrixTextView: NSTextView {
         // A replay: the same pass, stopping at the struck character.
         var groups: [Strike: CGMutablePath] = [:]
         walkCharacters(in: dirtyRect) { character, location, style, decor, tint, colour, origin in
+            // Emoji are drawn as the real glyph elsewhere, so skip them here.
+            guard !GlyphFont.isEmoji(character) else { return }
             guard location < litCount else { return }
             let strike = Strike(style: style, colour: colour, decor: decor)
             let path = groups[strike] ?? CGMutablePath()
@@ -1104,6 +1110,30 @@ final class GlyphMatrixTextView: NSTextView {
             GlyphMatrix.fillDots(path, colour: palette.painting(in: strike.colour).glyph,
                                  into: context)
         }
+    }
+
+    /// Draws the real colour glyphs for emoji, which the dot matrix cannot represent.
+    private func drawEmoji(in dirtyRect: NSRect, into context: CGContext) {
+        guard let layoutManager, let textContainer else { return }
+        let lit = litCount ?? Int.max
+        let emojiFont = NSFont(name: "Apple Color Emoji", size: Metrics.cellHeight * 0.72)
+            ?? NSFont.systemFont(ofSize: Metrics.cellHeight * 0.72)
+        // Emoji are allowed to spill slightly past their cell, so lift the clip off the dirty
+        // rect for the duration of this pass.
+        context.saveGState()
+        context.resetClip()
+        walkCharacters(in: dirtyRect) { character, location, style, decor, tint, colour, origin in
+            guard GlyphFont.isEmoji(character) else { return }
+            guard location < lit else { return }
+            let attributed = NSAttributedString(string: String(character), attributes: [
+                .font: emojiFont
+            ])
+            let size = attributed.size()
+            let point = NSPoint(x: origin.x + (Metrics.cellWidth - size.width) / 2,
+                                y: origin.y + (Metrics.cellHeight - size.height) / 2)
+            attributed.draw(at: point)
+        }
+        context.restoreGState()
     }
 
     /// Draws the caret as a lit cell: the block is filled with the accent colour and the cell's

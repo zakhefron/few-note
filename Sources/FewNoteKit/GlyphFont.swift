@@ -341,6 +341,101 @@ public enum GlyphFont {
         "Œ": ".####/#.#.#/#.#.#/#.###/#.#.#/#.#.#/.####/....."
     ]
 
+    /// Additional scripts: the letters of Cyrillic and Greek, so notes in those languages light
+    /// up as themselves rather than as missing-glyph boxes. Lookalikes share their Latin shape;
+    /// the rest are drawn for the 5×8 cell.
+    private static let scriptGlyphs: [Character: String] = [
+        // Cyrillic lookalikes (same shape as a Latin letter).
+        "А": baseGlyphs["A"]!, "В": baseGlyphs["B"]!, "Е": baseGlyphs["E"]!,
+        "К": baseGlyphs["K"]!, "М": baseGlyphs["M"]!, "Н": baseGlyphs["H"]!,
+        "О": baseGlyphs["O"]!, "Р": baseGlyphs["P"]!, "С": baseGlyphs["C"]!,
+        "Т": baseGlyphs["T"]!, "Х": baseGlyphs["X"]!,
+        "а": baseGlyphs["a"]!, "е": baseGlyphs["e"]!, "о": baseGlyphs["o"]!,
+        "р": baseGlyphs["p"]!, "с": baseGlyphs["c"]!, "у": baseGlyphs["y"]!,
+        "х": baseGlyphs["x"]!,
+        // Greek lookalikes.
+        "Α": baseGlyphs["A"]!, "Β": baseGlyphs["B"]!, "Ε": baseGlyphs["E"]!,
+        "Ζ": baseGlyphs["Z"]!, "Η": baseGlyphs["H"]!, "Ι": baseGlyphs["I"]!,
+        "Κ": baseGlyphs["K"]!, "Μ": baseGlyphs["M"]!, "Ν": baseGlyphs["N"]!,
+        "Ο": baseGlyphs["O"]!, "Ρ": baseGlyphs["P"]!, "Τ": baseGlyphs["T"]!,
+        "Χ": baseGlyphs["X"]!,
+        "α": baseGlyphs["a"]!, "ε": baseGlyphs["e"]!, "ζ": baseGlyphs["z"]!,
+        "η": baseGlyphs["n"]!, "ι": baseGlyphs["i"]!, "κ": baseGlyphs["k"]!,
+        "ν": baseGlyphs["v"]!, "ο": baseGlyphs["o"]!, "ρ": baseGlyphs["p"]!,
+        "τ": baseGlyphs["t"]!, "χ": baseGlyphs["x"]!, "ω": baseGlyphs["w"]!,
+        "Б": ".###./.#.#./.###./.#.../.###./...../...../.....",
+        "Г": ".#.../.#.../.#.../.#.../.###./...../...../.....",
+        "Д": "#..../####./.#.#./.#.#./.#.#./.###./...../.....",
+        "Ж": "#.##./.###./.###./.###./#.##./...../...../.....",
+        "З": ".##../...#./..#../...#./.##../...../...../.....",
+        "И": ".#.#./.#.#./..##./..##./...#./...../...../.....",
+        "Й": ".#.#./.#.#./..##./..##./...#./...../...../.....",
+        "Л": "#..#./.#.#./.#.#./.#.#./.###./...../...../.....",
+        "П": "...#./...#./...#./...#./.###./...../...../.....",
+        "Ф": "..#../.###./#.##./..##./..#../...../...../.....",
+        "Ц": "####./#..#./#..#./#..#./#..#./...../...../.....",
+        "Ч": "...#./...#./.###./...#./...#./...../...../.....",
+        "Ш": ".###./..##./..##./..##./..##./...../...../.....",
+        "Щ": "####./#..#./#..#./#..#./#..#./...../...../.....",
+        "Ъ": ".###./.#.#./.###./.#.../.#.../...../...../.....",
+        "Ы": "##.#./#.##./####./#..#./#..#./...../...../.....",
+        "Ь": ".###./.#.#./.###./.#.../.#.../...../...../.....",
+        "Э": ".##../...#./.###./...#./.##../...../...../.....",
+        "Ю": "#.##./##.#./##.#./##.#./#.##./...../...../.....",
+        "Я": ".#.#./.#.#./.###./.#.#./.###./...../...../.....",
+        "б": ".##../...#./.#.#./.##../.#.../...../...../.....",
+        "в": ".##../.#.#./.##../.##../...../...../...../.....",
+        "г": ".#.../.#.../.#.../.##../...../...../...../.....",
+        "д": ".###./.#.#./.#.#./.###./...../...../...../.....",
+        "ж": "..##./.###./.###./..##./...../...../...../.....",
+        "з": ".###./...#./..##./.##../...../...../...../.....",
+        "и": ".#.#./.#.#./.###./...#./...../...../...../.....",
+        "й": ".#.#./.#.#./.###./...#./..#../...../...../.....",
+        "к": ".#.#./.##../.##../.#.#./...../...../...../.....",
+        "л": "...#./.#.#./.#.#./.###./...../...../...../.....",
+        "м": "#..../#.##./##.#./#..#./...../...../...../.....",
+        "н": ".#.#./.#.#./.#.#./...#./...../...../...../.....",
+        "п": ".#.#./.#.#./.#.#./.###./...../...../...../.....",
+        "т": "..#../..#../..#../.##../...../...../...../.....",
+        "ф": "..#../.###./..##./..##./.##../..#../...../.....",
+        "ц": "...#./.###./...#./...#./...#./...../...../.....",
+        "ч": "...#./..##./.#.#./...#./...../...../...../.....",
+        "ш": ".###./..##./..##./..##./...../...../...../.....",
+        "щ": "####./#..#./#..#./#..#./...../...../...../.....",
+        "ъ": ".###./.#.#./.#.../.#.../...../...../...../.....",
+        "ы": ".###./..##./...#./...#./...../...../...../.....",
+        "ь": ".###./.#.#./.#.../...../...../...../...../.....",
+        "э": ".##../...#./...#./.##../...../...../...../.....",
+        "ю": "#.##./##.#./##.#./#.##./...../...../...../.....",
+        "я": ".#.#./.###./.#.#./.###./...../...../...../.....",
+        "Γ": "#####/....#/....#/....#/....#/....#/....#/.....",
+        "Δ": "####./.#.#./.#.#./.##../..#../...../...../.....",
+        "Θ": ".##../.#.#./.###./.#.#./.##../...../...../.....",
+        "Λ": "#..#./.#.#./.#.#./.##../..#../...../...../.....",
+        "Ξ": ".###./...../..#../...../.###./...../...../.....",
+        "Π": "...#./...#./...#./...#./.###./...../...../.....",
+        "Σ": ".###./.#.../..#../.#.../.###./...../...../.....",
+        "Φ": "..#../.###./.###./.###./..#../...../...../.....",
+        "Ψ": "..#../..#../.###./..##./..##./...../...../.....",
+        "Ω": ".#.#./.#.#./.#.#./.###./...../...../...../.....",
+        "γ": "..#../..#../.##../.#.#./#..#./...../...../.....",
+        "δ": ".##../...#./.#.#./.##../.#.../...../...../.....",
+        "θ": ".##../.#.#./.###./.#.#./.##../...../...../.....",
+        "λ": "...#./.#.#./.##../..#../.#.../...../...../.....",
+        "μ": ".###./.#.#./.#.#./...#./...../...../...../.....",
+        "π": "...#./.#.../.#.#./...../...../...../...../.....",
+        "σ": ".##../...#./.#.#./.###./...../...../...../.....",
+        "φ": "..#../.###./..##./..##./.###./...../...../.....",
+        "ψ": "..#../.##../..##./..##./..##./...../...../.....",
+        // A few pictographs, so a warm note can sparkle. Drawn small, the way the matrix draws everything.
+        "✨": "...../.#.#./..#../.#.#./...../...../...../.....",
+        "💛": ".#.#./##.##/##.##/.###./..#../...../...../.....",
+        "🌿": "...#./..##./.###./..##./...#./...../...../.....",
+        "♥": ".#.#./##.##/##.##/.###./..#../...../...../.....",
+        "★": "..#../.###./#####/.###./..#../...../...../.....",
+
+    ]
+
     /// Builds an accented letter from the plain one and its marks.
     private static func compose(_ encoded: String, letter: Letter) -> String {
         var rows = encoded.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
@@ -389,6 +484,7 @@ public enum GlyphFont {
         var table = baseGlyphs
         for (character, shape) in composedGlyphs { table[character] = shape }
         for (character, shape) in drawnLetters { table[character] = shape }
+        for (character, shape) in scriptGlyphs { table[character] = shape }
         return table
     }()
 
@@ -400,8 +496,26 @@ public enum GlyphFont {
 
     /// The lit dots to draw for a character. Unknown characters, and every non-ASCII character,
     /// get the missing-glyph box — the honest thing for a fixed face to do.
+    /// Resolves a character to one the face can draw: itself when it has a shape, otherwise the
+    /// base letter of its canonical decomposition (so an accented letter without its own glyph
+    /// still lights up as the letter it is), or nil when nothing matches.
+    public static func resolvedCharacter(for character: Character) -> Character? {
+        if glyphs[character] != nil { return character }
+        let decomposed = String(character).decomposedStringWithCanonicalMapping
+        if let first = decomposed.first, glyphs[first] != nil { return first }
+        if let lower = String(character).lowercased().first, glyphs[lower] != nil { return lower }
+        return nil
+    }
+
+    /// Whether a character is an emoji — and therefore wants the real colour glyph rather than dots.
+    public static func isEmoji(_ character: Character) -> Bool {
+        character.unicodeScalars.contains { $0.properties.isEmoji }
+            && !character.unicodeScalars.allSatisfy { $0.value < 0x20 }
+    }
+
     public static func litDots(for character: Character) -> [Dot] {
-        dots[character] ?? boxDots
+        if let resolved = resolvedCharacter(for: character), let d = dots[resolved] { return d }
+        return boxDots
     }
 
     /// The dots to draw for a character in a style, with bold thickening and italic lean applied.
@@ -409,7 +523,8 @@ public enum GlyphFont {
     /// Worked out once per character and style rather than every time it is drawn: a surface asks
     /// for these thousands of times in a single pass, and a note is redrawn on every keystroke.
     public static func placedDots(for character: Character, style: Style) -> [Placed] {
-        placed[style]?[character] ?? placedBox[style] ?? []
+        if let resolved = resolvedCharacter(for: character), let p = placed[style]?[resolved] { return p }
+        return placedBox[style] ?? []
     }
 
     private static let placed: [Style: [Character: [Placed]]] = {
