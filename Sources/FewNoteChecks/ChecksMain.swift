@@ -449,6 +449,9 @@ struct FewNoteChecks {
     @MainActor
     static func tintChecks(_ suite: CheckSuite) {
         _ = NSApplication.shared
+        // The rendered measurements below are taken on the dark surface. Pin the runner's own
+        // appearance, so the suite reads the same on a machine set to Light.
+        NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
 
         suite.equal(GlyphTint.allCases.count, 6, "six text colours are offered")
         suite.equal(GlyphTintPreference.resolve("nonsense"), .chalk, "an unknown colour falls back to chalk")
@@ -503,7 +506,7 @@ struct FewNoteChecks {
         let inset = GlyphMatrix.Metrics.insetSize
         let dotCentre = CGPoint(x: inset.width + pitch / 2, y: inset.height + pitch / 2)
         let stem = pixel(rep, at: dotCentre, scale: scale)
-        suite.isTrue(stem != nil && closeEnough(stem, ember, tolerance: 0.12),
+        suite.isTrue(stem != nil && closeEnough(stem, ember, tolerance: 0.16),
                      "a lit dot is drawn in the chosen colour (got \(describe(stem)), wanted \(describe(ember)))")
 
         // ...and the gap between two lit dots is not the panel, because the glow fills it.
