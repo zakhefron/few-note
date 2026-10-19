@@ -154,6 +154,18 @@ catalogue is kept complete.
 | `⌘A`, `⌘C`, `⌘V`, `⌘X` | Select all, copy, paste, cut |
 | `⌘F` | Find |
 
+## Install
+
+One line — it clones, builds on this Mac, and puts the app in `/Applications`:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/zakhefron/few-note/main/install.sh | sh
+```
+
+There is no binary download on purpose: an app moved onto a Mac by hand arrives quarantined, and
+an unsigned one is then refused by Gatekeeper ("Apple could not verify"). An app built on the
+machine it lands on carries no quarantine, so it opens as itself.
+
 ## Build and run
 
 Requires macOS 13+ and the Swift toolchain (Xcode or Command Line Tools).

@@ -1,25 +1,30 @@
 #!/bin/sh
 # FewNote installer — https://github.com/zakhefron/few-note
+#
+# There is no binary to download on purpose: an app moved onto a Mac by hand arrives
+# quarantined, and an unsigned one is then refused by Gatekeeper ("Apple could not verify").
+# An app built on the machine it lands on carries no quarantine — so this clones, builds
+# here, and installs.
 set -e
 
-URL="https://github.com/zakhefron/few-note/releases/download/v1.0/FewNote.dmg"
-DMG="/tmp/FewNote.dmg"
-VOL="/Volumes/FewNote"
+URL="https://github.com/zakhefron/few-note.git"
+STAGE="$(mktemp -d)"
+DIR="$STAGE/few-note"
 
-echo "Downloading FewNote…"
-curl -L --progress-bar -o "$DMG" "$URL"
+echo "Cloning FewNote…"
+git clone --quiet --depth 1 "$URL" "$DIR"
 
-echo "Mounting…"
-hdiutil attach "$DMG" -nobrowse -quiet
+echo "Building (a minute or two the first time)…"
+cd "$DIR"
+./scripts/build.sh
 
 echo "Installing to /Applications…"
 rm -rf /Applications/FewNote.app
-cp -R "$VOL/FewNote.app" /Applications/
+cp -R "$DIR/build/FewNote.app" /Applications/
 
 echo "Cleaning up…"
-hdiutil detach "$VOL" -quiet 2>/dev/null || true
-rm -f "$DMG"
-xattr -cr /Applications/FewNote.app
+rm -rf "$STAGE"
 
 echo "Done. Launching FewNote…"
-open /Applications/FewNote.app
+open /Applications/FewNote.app ||
+  echo "The app is in /Applications — open it from Launchpad or Finder."
