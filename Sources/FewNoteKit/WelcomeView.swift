@@ -6,26 +6,40 @@ import SwiftUI
 /// same matrix the writing happens on — not a logo of a typeface next to a typeface of dots.
 struct Wordmark: View {
 
-    var text: String = "FewNote"
+    var text: String = "Few\nNote"
     var dot: CGFloat = 2.6
     var spacing: CGFloat = 4.0
     var colour: Color = .primary
 
-    private var width: CGFloat { CGFloat(text.count) * CGFloat(GlyphFont.columns + 1) * spacing - spacing }
-    private var height: CGFloat { CGFloat(GlyphFont.rows) * spacing - spacing }
+    private var lines: [String] { text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) }
+
+    private var width: CGFloat {
+        let cols = lines.map { CGFloat($0.count) * CGFloat(GlyphFont.columns + 1) * spacing - spacing }.max() ?? 0
+        return cols
+    }
+    private var height: CGFloat {
+        let lineCount = CGFloat(lines.count)
+        return lineCount * (CGFloat(GlyphFont.rows) * spacing - spacing) + (lineCount - 1) * spacing
+    }
 
     var body: some View {
         Canvas { context, _ in
-            var pen: CGFloat = 0
-            for character in text {
-                for lit in GlyphFont.litDots(for: character) {
-                    let rect = CGRect(x: pen + CGFloat(lit.column) * spacing,
-                                      y: CGFloat(lit.row) * spacing,
-                                      width: dot,
-                                      height: dot)
-                    context.fill(Path(ellipseIn: rect), with: .color(colour))
+            let lineCount = CGFloat(lines.count)
+            let lineHeight = CGFloat(GlyphFont.rows) * spacing - spacing
+            var yBase: CGFloat = 0
+            for line in lines {
+                var pen: CGFloat = (width - (CGFloat(line.count) * CGFloat(GlyphFont.columns + 1) * spacing - spacing)) / 2
+                for character in line {
+                    for lit in GlyphFont.litDots(for: character) {
+                        let rect = CGRect(x: pen + CGFloat(lit.column) * spacing,
+                                          y: yBase + CGFloat(lit.row) * spacing,
+                                          width: dot,
+                                          height: dot)
+                        context.fill(Path(ellipseIn: rect), with: .color(colour))
+                    }
+                    pen += CGFloat(GlyphFont.columns + 1) * spacing
                 }
-                pen += CGFloat(GlyphFont.columns + 1) * spacing
+                yBase += lineHeight + spacing
             }
         }
         .frame(width: width, height: height)
