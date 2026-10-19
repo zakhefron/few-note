@@ -13,7 +13,7 @@ struct FewNoteIcon {
 
     /// The sizes macOS asks an app icon for. `iconutil` wants each of them twice, once at 1× and
     /// once at 2×, so the same pixels are rendered once and written twice under different names.
-    static let sizes = [16, 32, 64, 128, 256, 512, 1024]
+    static let sizes = [16, 32, 64, 128, 256]
 
     static func main() {
         let output = URL(fileURLWithPath: CommandLine.arguments.count > 1

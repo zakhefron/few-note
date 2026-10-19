@@ -20,6 +20,7 @@ rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
 
 cp "$BIN_DIR/FewNote" "$APP_DIR/Contents/MacOS/FewNote"
+strip -x "$APP_DIR/Contents/MacOS/FewNote" 2>/dev/null || true
 cp scripts/Info.plist "$APP_DIR/Contents/Info.plist"
 
 # The interface's languages. A .lproj directory is all AppKit needs to read a translation, so the
