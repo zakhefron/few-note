@@ -3,34 +3,74 @@
 #
 # There is no binary to download on purpose: an app moved onto a Mac by hand arrives
 # quarantined, and an unsigned one is then refused by Gatekeeper ("Apple could not verify").
-# An app built on the machine it lands on carries no quarantine — so this clones, builds
-# here, and installs.
+# An app built on the machine it lands on carries no quarantine — so this fetches the
+# sources, builds here, and installs.
 #
-# The sources and the build cache live in ~/Library/Caches/FewNote, so the first install
-# compiles once — about a minute — and later installs rebuild only what changed, in seconds.
-# The build is release, the same binary building from source produces; set FEWNOTE_DEBUG=1
-# for a quicker rebuild after changing sources.
+# The sources and the build cache live in ~/Library/Caches/FewNote: the first install
+# compiles once (about a minute), and later installs rebuild only what changed, in
+# seconds. The build is release, the same binary building from source produces; set
+# FEWNOTE_DEBUG=1 for a quicker rebuild while changing sources.
 set -u
-
-step() { printf '\033[1m▸ %s\033[0m\n' "$1"; }
-fail() { printf '\n\033[1;31m✗ %s\033[0m\n' "$1"; exit 1; }
-elapsed() { printf '  (%ss)\n' "$(( $(date +%s) - $1 ))"; }
-
-command -v git   >/dev/null 2>&1 || fail "git is required but not installed. Run: xcode-select --install"
-command -v swift >/dev/null 2>&1 || fail "the Swift toolchain is required. Run: xcode-select --install (free)"
 
 CACHE="$HOME/Library/Caches/FewNote"
 URL="https://github.com/zakhefron/few-note.git"
 CONFIG="release"
 [ "${FEWNOTE_DEBUG:-}" = "1" ] && CONFIG="debug"
+SPIN=0
+LAST=''
 
-step "Fetching the sources into ~/Library/Caches/FewNote…"
+# Colour only when the runner is interactive; the brand amber is FewNote's own.
+# The escapes are baked into the variables as real bytes, so they survive any printf %s.
+AMBER='' GREEN='' RED='' DIM='' BOLD='' RESET=''
+if [ -t 1 ]; then
+    AMBER=$(printf '\033[38;5;208m') GREEN=$(printf '\033[32m') RED=$(printf '\033[1;31m')
+    DIM=$(printf '\033[2m') BOLD=$(printf '\033[1m') RESET=$(printf '\033[0m')
+fi
+
+begin() { LAST="$1"; printf '  %s⋅%s %-34s' "$AMBER" "$RESET" "$1"; }
+
+finish() { # $1 label, $2 seconds, $3 note — replaces the pending line
+    [ -t 1 ] && printf '\r\033[K'
+    printf '  %s✓%s %-34s' "$GREEN" "$RESET" "$1"
+    [ -n "${2:-}" ] && printf '  %ss%s' "$2" "$RESET"
+    [ -n "${3:-}" ] && printf '  · %s%s%s' "$DIM" "$3" "$RESET"
+    printf '\n'
+}
+
+fail() { printf '\n  ✗ %s\n' "$1"; exit 1; }
+
+spin() { # $1 = pid of the running job; repaints the pending line with a moving mark
+    while kill -0 "$1" 2>/dev/null; do
+        case $((SPIN % 4)) in
+            0) c='|' ;; 1) c='/' ;; 2) c='-' ;; 3) c='\' ;;
+        esac
+        printf '\r\033[K  %s⋅%s %-34s%s%s%s' "$AMBER" "$RESET" "$LAST" "$AMBER" "$c" "$RESET"
+        SPIN=$((SPIN + 1))
+        sleep 0.12
+    done
+}
+
+printf '\n'
+printf '  %s●%s %sFewNote%s %sinstaller%s\n' "$AMBER" "$RESET" "$BOLD" "$RESET" "$DIM" "$RESET"
+printf '  %sthe dot-matrix notepad for macOS · builds from source · MIT%s\n\n' "$DIM" "$RESET"
+
+# ---- toolchain ----------------------------------------------------------
+begin "Toolchain"
+SWIFT=$(swift --version 2>/dev/null | head -1 | sed 's/^Swift version //;s/^Apple Swift version /Swift /;s/ (swiftlang.*//')
+[ -n "$SWIFT" ] || fail "the Swift toolchain is not installed. Run: xcode-select --install (free)"
+printf '%s%s\n' "$SWIFT" "$RESET"
+
+# ---- sources ------------------------------------------------------------
+begin "Fetching sources…"
+START=$(date +%s)
+NOTE=''
 if [ -d "$CACHE/.git" ]; then
+    OLD=$(git -C "$CACHE" rev-parse HEAD 2>/dev/null)
     if git -C "$CACHE" fetch --quiet --depth 1 origin main &&
        git -C "$CACHE" reset --hard --quiet origin/main; then
-        :
+        NEW=$(git -C "$CACHE" rev-parse HEAD)
+        [ "$OLD" = "$NEW" ] && NOTE='already current' || NOTE='updated'
     else
-        step "that cached copy is unusable; cloning afresh…"
         rm -rf "$CACHE"
     fi
 fi
@@ -39,24 +79,51 @@ if [ ! -d "$CACHE/.git" ]; then
       || fail "the clone failed.
   If it says 'Could not resolve host: github.com', this Mac has no DNS servers.
   Fix it once with:  sudo networksetup -setdnsservers Wi-Fi 1.1.1.1 8.8.8.8"
+    NOTE='fresh clone'
 fi
+T=$(( $(date +%s) - START ))
+finish "Sources" "$T" "$NOTE"
 
-step "Building ($CONFIG — a minute or two the first time, seconds afterwards)…"
+# ---- build --------------------------------------------------------------
+begin "Building ($CONFIG)…"
 START=$(date +%s)
-(cd "$CACHE" && ./scripts/build.sh "$CONFIG" >"$CACHE/build.log" 2>&1) || {
-    printf -- '--- last 25 lines of the build log ---\n'
+(cd "$CACHE" && ./scripts/build.sh "$CONFIG" >"$CACHE/build.log" 2>&1) &
+BPID=$!
+[ -t 1 ] && spin "$BPID"
+if ! wait "$BPID"; then
+    printf '\r\033[K\n'
+    printf '--- last 25 lines of the build log ---\n'
     tail -25 "$CACHE/build.log"
     printf -- '-------------------------------------\n'
     fail "the build failed. The full log is kept at $CACHE/build.log"
-}
-CONFIGURATION="$CONFIG" elapsed "$START"
+fi
+T=$(( $(date +%s) - START ))
+finish "Build ($CONFIG) — the only slow step" "$T" \
+    'first install builds once; afterwards this is seconds'
 
-step "Installing to /Applications…"
+# ---- install ------------------------------------------------------------
+begin "Installing…"
+START=$(date +%s)
 rm -rf /Applications/FewNote.app \
   || fail "could not remove the old app — quit FewNote if it is running, then rerun the installer"
 cp -R "$CACHE/build/FewNote.app" /Applications/ \
   || fail "could not copy the app to /Applications — try rerunning with: sudo sh"
+T=$(( $(date +%s) - START ))
+finish "Installed → /Applications" "$T"
 
-step "Done. Launching FewNote…"
-open /Applications/FewNote.app \
-  || echo "The app is in /Applications — open it from Launchpad or Finder."
+# ---- launch -------------------------------------------------------------
+begin "Launching…"
+if open /Applications/FewNote.app 2>/dev/null; then
+    finish "Launched"
+else
+    finish "Ready in /Applications — open it from Launchpad"
+fi
+
+# ---- summary ------------------------------------------------------------
+VER=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' \
+      /Applications/FewNote.app/Contents/Info.plist 2>/dev/null || echo '?')
+KB=$(du -sk /Applications/FewNote.app 2>/dev/null | cut -f1)
+SIZE=$(awk "BEGIN{printf \"%.1f\", $KB/1024}" 2>/dev/null)
+printf '\n'
+printf '  %s✓ FewNote %s — %s MB on disk%s\n' "$GREEN" "$VER" "$SIZE" "$RESET"
+printf '  %sOpen it, type, close it. That'"'"'s it.%s\n\n' "$DIM" "$RESET"
