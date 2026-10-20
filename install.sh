@@ -139,14 +139,22 @@ RELEASE_URL="https://github.com/zakhefron/few-note/releases/latest/download/FewN
 begin "Downloading prebuilt build…"
 START=$(date +%s)
 TMPZIP="$CACHE/FewNote.zip"
-if ! curl -fL --progress-bar "$RELEASE_URL" -o "$TMPZIP"; then
-    fail "could not download the prebuilt build (HTTP 404/failed).
-  This means no release has been published yet, or the asset name differs.
-  Options:
-    - Install Xcode and rerun (builds from source):  sudo xcode-select -s /Applications/Xcode.app
-    - Or publish a release first: run ./scripts/package.sh and upload build/FewNote.zip
-      to https://github.com/zakhefron/few-note/releases as 'FewNote.zip'."
+rm -f "$TMPZIP"
+curl -fsSL "$RELEASE_URL" -o "$TMPZIP" &
+DLBPID=$!
+spin "$DLBPID" &
+SPINPID=$!
+if ! wait "$DLBPID"; then
+    kill "$SPINPID" 2>/dev/null
+    wait "$SPINPID" 2>/dev/null
+    printf '\r\033[K'
+    fail "could not download the prebuilt build (404 = no release published yet).
+  Either install Xcode to build from source, or ask the maintainer to run
+  ./scripts/package.sh and upload build/FewNote.zip to GitHub Releases."
 fi
+kill "$SPINPID" 2>/dev/null
+wait "$SPINPID" 2>/dev/null
+    printf '\r\033[K'
 rm -rf "$CACHE/FewNote.app"
 unzip -q "$TMPZIP" -d "$CACHE" || fail "could not extract the build."
 rm -f "$TMPZIP"
