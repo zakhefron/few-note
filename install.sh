@@ -41,12 +41,13 @@ fail() { printf '\n  ✗ %s\n' "$1"; exit 1; }
 
 spin() { # $1 = pid of the running job; repaints the pending line with a moving mark
     while kill -0 "$1" 2>/dev/null; do
-        case $((SPIN % 4)) in
-            0) c='|' ;; 1) c='/' ;; 2) c='-' ;; 3) c='\' ;;
+        case $((SPIN % 10)) in
+            0) c='⠋' ;; 1) c='⠙' ;; 2) c='⠹' ;; 3) c='⠸' ;; 4) c='⠼' ;;
+            5) c='⠴' ;; 6) c='⠦' ;; 7) c='⠧' ;; 8) c='⠇' ;; 9) c='⠏' ;;
         esac
         printf '\r\033[K  %s⋅%s %-34s%s%s%s' "$AMBER" "$RESET" "$LAST" "$AMBER" "$c" "$RESET"
         SPIN=$((SPIN + 1))
-        sleep 0.12
+        sleep 0.08
     done
 }
 
