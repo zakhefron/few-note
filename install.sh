@@ -39,15 +39,27 @@ finish() { # $1 label, $2 seconds, $3 note — replaces the pending line
 
 fail() { printf '\n  ✗ %s\n' "$1"; exit 1; }
 
-spin() { # $1 = pid of the running job; repaints the pending line with a moving mark
+spin() { # $1 = pid; animated progress bar + elapsed time
+    local width=24 i=0 t0
+    t0=$(date +%s)
     while kill -0 "$1" 2>/dev/null; do
-        case $((SPIN % 10)) in
-            0) c='⠋' ;; 1) c='⠙' ;; 2) c='⠹' ;; 3) c='⠸' ;; 4) c='⠼' ;;
-            5) c='⠴' ;; 6) c='⠦' ;; 7) c='⠧' ;; 8) c='⠇' ;; 9) c='⠏' ;;
-        esac
-        printf '\r\033[K  %s⋅%s %-34s%s%s%s' "$AMBER" "$RESET" "$LAST" "$AMBER" "$c" "$RESET"
-        SPIN=$((SPIN + 1))
-        sleep 0.08
+        i=$(( (i + 1) % (width + 4) ))
+        # Build a sliding block inside the bar
+        bar=""
+        j=0
+        while [ $j -lt $width ]; do
+            pos=$(( j - i + 4 ))
+            if [ $pos -ge 0 ] && [ $pos -lt 4 ]; then
+                bar="${bar}█"
+            else
+                bar="${bar}░"
+            fi
+            j=$((j + 1))
+        done
+        now=$(date +%s)
+        elapsed=$(( now - t0 ))
+        printf '\r\033[K  %s⋅%s %-34s%s[%s]%s  %ss' "$AMBER" "$RESET" "$LAST" "$AMBER" "$bar" "$RESET" "$elapsed"
+        sleep 0.06
     done
 }
 
