@@ -121,8 +121,12 @@ begin "Downloading prebuilt build…"
 START=$(date +%s)
 TMPZIP="$CACHE/FewNote.zip"
 if ! curl -fsSL "$RELEASE_URL" -o "$TMPZIP"; then
-    fail "could not download the prebuilt build.
-  Check your network, or install Xcode and rerun to build from source."
+    fail "could not download the prebuilt build (HTTP 404/failed).
+  This means no release has been published yet, or the asset name differs.
+  Options:
+    - Install Xcode and rerun (builds from source):  sudo xcode-select -s /Applications/Xcode.app
+    - Or publish a release first: run ./scripts/package.sh and upload build/FewNote.zip
+      to https://github.com/zakhefron/few-note/releases as 'FewNote.zip'."
 fi
 rm -rf "$CACHE/FewNote.app"
 unzip -q "$TMPZIP" -d "$CACHE" || fail "could not extract the build."
