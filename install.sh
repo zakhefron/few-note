@@ -56,18 +56,18 @@ printf '  %sthe dot-matrix notepad for macOS · builds from source · MIT%s\n\n'
 
 # ---- toolchain ----------------------------------------------------------
 begin "Toolchain"
-# SwiftUI macros (@State, @AppStorage, ...) need the macro plugin that ships with
-# full Xcode; the Command Line Tools alone cannot build this app.
-if ! xcodebuild -version >/dev/null 2>&1; then
-    fail "full Xcode is required (not just the Command Line Tools).
-  Install Xcode from the Mac App Store, then run:  sudo xcode-select -s /Applications/Xcode.app
-  The Command Line Tools alone cannot compile SwiftUI macros."
+if xcodebuild -version >/dev/null 2>&1; then
+    SWIFT=$(swift --version 2>/dev/null | head -1 | sed 's/^Swift version //;s/^Apple Swift version /Swift /;s/ (swiftlang.*//')
+    [ -n "$SWIFT" ] || fail "the Swift toolchain is not installed."
+    XCV=$(xcodebuild -version 2>/dev/null | head -1)
+    printf '%s  %s%s\n' "$XCV" "$SWIFT" "$RESET"
+    BUILD_FROM_SOURCE=1
+else
+    printf 'Command Line Tools only - will download a prebuilt build%s\n' "$RESET"
+    BUILD_FROM_SOURCE=0
 fi
-SWIFT=$(swift --version 2>/dev/null | head -1 | sed 's/^Swift version //;s/^Apple Swift version /Swift /;s/ (swiftlang.*//')
-[ -n "$SWIFT" ] || fail "the Swift toolchain is not installed."
-XCV=$(xcodebuild -version 2>/dev/null | head -1)
-printf '%s  %s%s\n' "$XCV" "$SWIFT" "$RESET"
 
+if [ "${BUILD_FROM_SOURCE:-0}" = "1" ]; then
 # ---- sources ------------------------------------------------------------
 begin "Fetching sources…"
 START=$(date +%s)
@@ -113,13 +113,37 @@ T=$(( $(date +%s) - START ))
 finish "Build ($CONFIG) — the only slow step" "$T" \
     'first install builds once; afterwards this is seconds'
 
+
+else
+# ---- download prebuilt (no Xcode) --------------------------------------
+RELEASE_URL="https://github.com/zakhefron/few-note/releases/latest/download/FewNote.zip"
+begin "Downloading prebuilt build…"
+START=$(date +%s)
+TMPZIP="$CACHE/FewNote.zip"
+if ! curl -fsSL "$RELEASE_URL" -o "$TMPZIP"; then
+    fail "could not download the prebuilt build.
+  Check your network, or install Xcode and rerun to build from source."
+fi
+rm -rf "$CACHE/FewNote.app"
+unzip -q "$TMPZIP" -d "$CACHE" || fail "could not extract the build."
+rm -f "$TMPZIP"
+T=$(( $(date +%s) - START ))
+finish "Downloaded prebuilt build" "$T" "no Xcode needed"
+fi
+
 # ---- install ------------------------------------------------------------
 begin "Installing…"
 START=$(date +%s)
 rm -rf /Applications/FewNote.app \
   || fail "could not remove the old app — quit FewNote if it is running, then rerun the installer"
-cp -R "$CACHE/build/FewNote.app" /Applications/ \
-  || fail "could not copy the app to /Applications — try rerunning with: sudo sh"
+if [ "${BUILD_FROM_SOURCE:-0}" = "1" ]; then
+    cp -R "$CACHE/build/FewNote.app" /Applications/ \
+      || fail "could not copy the app to /Applications — try rerunning with: sudo sh"
+else
+    cp -R "$CACHE/FewNote.app" /Applications/ \
+      || fail "could not copy the app to /Applications — try rerunning with: sudo sh"
+    xattr -dr com.apple.quarantine /Applications/FewNote.app 2>/dev/null || true
+fi
 T=$(( $(date +%s) - START ))
 finish "Installed → /Applications" "$T"
 
