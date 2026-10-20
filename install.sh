@@ -92,9 +92,9 @@ BPID=$!
 [ -t 1 ] && spin "$BPID"
 if ! wait "$BPID"; then
     printf '\r\033[K\n'
-    printf '--- last 25 lines of the build log ---\n'
+    printf '%s\n' '--- last 25 lines of the build log ---'
     tail -25 "$CACHE/build.log"
-    printf -- '-------------------------------------\n'
+    printf '%s\n' '-------------------------------------'
     fail "the build failed. The full log is kept at $CACHE/build.log"
 fi
 T=$(( $(date +%s) - START ))
