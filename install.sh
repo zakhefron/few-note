@@ -120,7 +120,7 @@ RELEASE_URL="https://github.com/zakhefron/few-note/releases/latest/download/FewN
 begin "Downloading prebuilt build…"
 START=$(date +%s)
 TMPZIP="$CACHE/FewNote.zip"
-if ! curl -fsSL "$RELEASE_URL" -o "$TMPZIP"; then
+if ! curl -fL --progress-bar "$RELEASE_URL" -o "$TMPZIP"; then
     fail "could not download the prebuilt build (HTTP 404/failed).
   This means no release has been published yet, or the asset name differs.
   Options:
