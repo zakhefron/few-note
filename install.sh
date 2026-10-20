@@ -56,9 +56,17 @@ printf '  %sthe dot-matrix notepad for macOS · builds from source · MIT%s\n\n'
 
 # ---- toolchain ----------------------------------------------------------
 begin "Toolchain"
+# SwiftUI macros (@State, @AppStorage, ...) need the macro plugin that ships with
+# full Xcode; the Command Line Tools alone cannot build this app.
+if ! xcodebuild -version >/dev/null 2>&1; then
+    fail "full Xcode is required (not just the Command Line Tools).
+  Install Xcode from the Mac App Store, then run:  sudo xcode-select -s /Applications/Xcode.app
+  The Command Line Tools alone cannot compile SwiftUI macros."
+fi
 SWIFT=$(swift --version 2>/dev/null | head -1 | sed 's/^Swift version //;s/^Apple Swift version /Swift /;s/ (swiftlang.*//')
-[ -n "$SWIFT" ] || fail "the Swift toolchain is not installed. Run: xcode-select --install (free)"
-printf '%s%s\n' "$SWIFT" "$RESET"
+[ -n "$SWIFT" ] || fail "the Swift toolchain is not installed."
+XCV=$(xcodebuild -version 2>/dev/null | head -1)
+printf '%s  %s%s\n' "$XCV" "$SWIFT" "$RESET"
 
 # ---- sources ------------------------------------------------------------
 begin "Fetching sources…"
