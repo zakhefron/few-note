@@ -66,20 +66,24 @@ START=$(date +%s)
 NOTE=''
 if [ -d "$CACHE/.git" ]; then
     OLD=$(git -C "$CACHE" rev-parse HEAD 2>/dev/null)
-    if git -C "$CACHE" fetch --quiet --depth 1 origin main &&
-       git -C "$CACHE" reset --hard --quiet origin/main; then
+    if git -C "$CACHE" fetch --quiet --depth 1 origin main 2>/dev/null &&
+       git -C "$CACHE" reset --hard --quiet origin/main 2>/dev/null; then
         NEW=$(git -C "$CACHE" rev-parse HEAD)
         [ "$OLD" = "$NEW" ] && NOTE='already current' || NOTE='updated'
     else
-        rm -rf "$CACHE"
+        # Offline or fetch failed: keep the cached sources and build those.
+        NOTE='offline - using cached sources'
     fi
 fi
 if [ ! -d "$CACHE/.git" ]; then
-    git clone --quiet --depth 1 "$URL" "$CACHE" \
-      || fail "the clone failed.
+    if git clone --quiet --depth 1 "$URL" "$CACHE" 2>/dev/null; then
+        NOTE='fresh clone'
+    else
+        fail "the clone failed.
   If it says 'Could not resolve host: github.com', this Mac has no DNS servers.
-  Fix it once with:  sudo networksetup -setdnsservers Wi-Fi 1.1.1.1 8.8.8.8"
-    NOTE='fresh clone'
+  Fix it once with:  sudo networksetup -setdnsservers Wi-Fi 1.1.1.1 8.8.8.8
+  Or download the zip manually from https://github.com/zakhefron/few-note"
+    fi
 fi
 T=$(( $(date +%s) - START ))
 finish "Sources" "$T" "$NOTE"
