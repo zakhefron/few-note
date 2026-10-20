@@ -114,14 +114,20 @@ begin "Building ($CONFIG)…"
 START=$(date +%s)
 (cd "$CACHE" && ./scripts/build.sh "$CONFIG" >"$CACHE/build.log" 2>&1) &
 BPID=$!
-[ -t 1 ] && spin "$BPID"
+spin "$BPID" &
+SPINPID=$!
 if ! wait "$BPID"; then
+    kill "$SPINPID" 2>/dev/null
+    wait "$SPINPID" 2>/dev/null
     printf '\r\033[K\n'
     printf '%s\n' '--- last 25 lines of the build log ---'
     tail -25 "$CACHE/build.log"
     printf '%s\n' '-------------------------------------'
     fail "the build failed. The full log is kept at $CACHE/build.log"
 fi
+kill "$SPINPID" 2>/dev/null
+wait "$SPINPID" 2>/dev/null
+printf '\r\033[K'
 T=$(( $(date +%s) - START ))
 finish "Build ($CONFIG) — the only slow step" "$T" \
     'first install builds once; afterwards this is seconds'
