@@ -618,12 +618,28 @@ final class GlyphMatrixTextView: NSTextView {
     private func applyAppearance() {
         palette = Appearance.resolve(drawingAppearance ?? effectiveAppearance, tint: tint)
         backgroundColor = palette.panel
-        // The characters are drawn as dots, never as text.
+        // The characters are drawn as dots, never as text. Clear the default colour so any run
+        // that carries a visible foreground colour (pasted text, imported RTF, digits) does not
+        // render as glyphs on top of the matrix.
         textColor = .clear
         insertionPointColor = palette.caret
         typingAttributes[.foregroundColor] = NSColor.clear
         fieldColour = nil
         fieldColourKey = nil
+        clearForegroundColours()
+    }
+
+    /// Ensures no attributed run carries a visible foreground colour: every character is drawn
+    /// as dots, so the underlying text must stay invisible. Called whenever the surface is
+    /// styled or the text changes (typing, paste, import).
+    private func clearForegroundColours() {
+        guard let textStorage, textStorage.length > 0 else { return }
+        let whole = NSRange(location: 0, length: textStorage.length)
+        textStorage.enumerateAttributes(in: whole, options: []) { attributes, range, _ in
+            if attributes[.foregroundColor] as? NSColor != NSColor.clear {
+                textStorage.addAttribute(.foregroundColor, value: NSColor.clear, range: range)
+            }
+        }
     }
 
     /// The dot field as a repeating pattern colour, built once per appearance, text size and
@@ -820,6 +836,9 @@ final class GlyphMatrixTextView: NSTextView {
 
     override func didChangeText() {
         super.didChangeText()
+        // Keep every run invisible: pasted or imported text may carry a visible foreground colour
+        // that would render as glyphs instead of dots.
+        clearForegroundColours()
         // The line the caret is on may have just become a list item (or stopped being one).
         restyleLine(at: selectedRange().location)
         restartBlink()
