@@ -636,7 +636,7 @@ final class GlyphMatrixTextView: NSTextView {
         guard let textStorage, textStorage.length > 0 else { return }
         let whole = NSRange(location: 0, length: textStorage.length)
         textStorage.enumerateAttributes(in: whole, options: []) { attributes, range, _ in
-            if attributes[.foregroundColor] as? NSColor != NSColor.clear {
+            if let color = attributes[.foregroundColor] as? NSColor, color.alphaComponent > 0 {
                 textStorage.addAttribute(.foregroundColor, value: NSColor.clear, range: range)
             }
         }
