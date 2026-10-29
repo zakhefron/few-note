@@ -911,7 +911,7 @@ final class GlyphMatrixTextView: NSTextView {
             guard location >= selectedRange.location,
                   location < selectedRange.location + selectedRange.length else { return }
             let cellRect = NSRect(x: origin.x, y: origin.y,
-                                  width: metrics.cellWidth, height: metrics.cellHeight)
+                                  width: Metrics.cellWidth, height: Metrics.cellHeight)
             if cellRect.intersects(dirtyRect) {
                 context.fill(cellRect)
             }
