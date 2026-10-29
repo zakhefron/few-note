@@ -876,9 +876,9 @@ final class GlyphMatrixTextView: NSTextView {
         // character is drawn as dots by drawLitDots instead, so digits (or any text with a
         // visible foreground colour) cannot render as black system-font glyphs on top of the
         // dot matrix.
-        if let layoutManager = layoutManager, let textContainer = textContainer {
-            let glyphRange = layoutManager.glyphRange(forBoundingRect: dirtyRect, in: textContainer)
-            layoutManager.drawBackground(forGlyphRange: glyphRange, in: textContainer)
+        if let layoutManager = layoutManager {
+            let glyphRange = layoutManager.glyphRange(forBoundingRect: dirtyRect, in: textContainer!)
+            layoutManager.drawBackground(forGlyphRange: glyphRange, at: .zero)
         }
         guard let context = NSGraphicsContext.current?.cgContext else { return }
         drawBloom(in: dirtyRect, into: context)
