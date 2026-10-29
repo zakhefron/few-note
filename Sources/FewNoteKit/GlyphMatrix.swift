@@ -353,18 +353,6 @@ enum GlyphMatrix {
 
 // MARK: - The matrix text view
 
-/// A layout manager that never draws text glyphs. Every character is drawn as dots by
-/// `drawLitDots` instead, so digits (or any text with a visible foreground colour) cannot
-/// render as glyphs on top of the dot matrix.
-final class SilentLayoutManager: NSLayoutManager {
-    /// The characters are drawn as dots by `drawLitDots`, never as text glyphs. Suppress glyph
-    /// drawing entirely so digits (or any text with a visible foreground colour) cannot render on
-    /// top of the dot matrix.
-    override func drawGlyphs(forGlyphRange glyphRange: NSRange, in layoutContainer: NSTextContainer) {
-        // Intentionally empty: drawLitDots paints the matrix instead.
-    }
-}
-
 /// An `NSTextView` that draws the glyph matrix instead of text.
 ///
 /// The text itself is kept (and laid out) by AppKit, but its colour is clear: every character the
@@ -440,7 +428,7 @@ final class GlyphMatrixTextView: NSTextView {
         // The text system is built here rather than left to `NSTextView`, so the container is
         // pinned to whole cells from the first layout onwards.
         let storage = NSTextStorage()
-        let layoutManager = SilentLayoutManager()
+        let layoutManager = NSLayoutManager()
         storage.addLayoutManager(layoutManager)
         let container = NSTextContainer(size: NSSize(width: CGFloat.greatestFiniteMagnitude,
                                                      height: CGFloat.greatestFiniteMagnitude))
@@ -884,13 +872,14 @@ final class GlyphMatrixTextView: NSTextView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        // Make sure no run carries a visible foreground colour: every character is drawn as dots,
-        // so the text layer itself must stay invisible. This is the last line of defence for text
-        // that was pasted in or imported from RTF with a visible colour.
-        clearForegroundColours()
-        // Background (panel + dot field), selection highlight and the invisible text all come from
-        // the text system; the bloom and the lit dots are ours.
-        super.draw(dirtyRect)
+        // Draw the text container background (panel colour) but NOT the text glyphs. Every
+        // character is drawn as dots by drawLitDots instead, so digits (or any text with a
+        // visible foreground colour) cannot render as black system-font glyphs on top of the
+        // dot matrix.
+        if let layoutManager = layoutManager, let textContainer = textContainer {
+            let glyphRange = layoutManager.glyphRange(forBoundingRect: dirtyRect, in: textContainer)
+            layoutManager.drawBackground(forGlyphRange: glyphRange, in: textContainer)
+        }
         guard let context = NSGraphicsContext.current?.cgContext else { return }
         drawBloom(in: dirtyRect, into: context)
         drawLitDots(in: dirtyRect, into: context)
