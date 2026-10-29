@@ -353,6 +353,15 @@ enum GlyphMatrix {
 
 // MARK: - The matrix text view
 
+/// A layout manager that never draws text glyphs. Every character is drawn as dots by
+/// `drawLitDots` instead, so digits (or any text with a visible foreground colour) cannot
+/// render as glyphs on top of the dot matrix.
+final class SilentLayoutManager: NSLayoutManager {
+    override func drawGlyphs(forGlyphRange glyphRange: NSRange, at origin: NSPoint) {
+        // Intentionally empty: drawLitDots paints the matrix instead.
+    }
+}
+
 /// An `NSTextView` that draws the glyph matrix instead of text.
 ///
 /// The text itself is kept (and laid out) by AppKit, but its colour is clear: every character the
@@ -428,7 +437,7 @@ final class GlyphMatrixTextView: NSTextView {
         // The text system is built here rather than left to `NSTextView`, so the container is
         // pinned to whole cells from the first layout onwards.
         let storage = NSTextStorage()
-        let layoutManager = NSLayoutManager()
+        let layoutManager = SilentLayoutManager()
         storage.addLayoutManager(layoutManager)
         let container = NSTextContainer(size: NSSize(width: CGFloat.greatestFiniteMagnitude,
                                                      height: CGFloat.greatestFiniteMagnitude))
