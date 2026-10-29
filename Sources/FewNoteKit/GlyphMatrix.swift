@@ -896,6 +896,13 @@ final class GlyphMatrixTextView: NSTextView {
         drawCaret(in: dirtyRect, into: context)
     }
 
+    /// NSLayoutManager calls textView.drawGlyphs(forGlyphRange:at:) directly during
+    /// displayGlyphs — bypassing NSTextView.draw(_:). Suppress it here so no text glyphs
+    /// (digits or otherwise) ever render on top of the dot matrix.
+    override func drawGlyphs(forGlyphRange glyphRange: NSRange, at origin: NSPoint) {
+        // Intentionally empty: drawLitDots paints the matrix instead.
+    }
+
     // MARK: The bloom
 
     /// How a run of characters is painted: the two things that decide where its dots go.
