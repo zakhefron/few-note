@@ -881,26 +881,41 @@ final class GlyphMatrixTextView: NSTextView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        // Draw the text container background (panel colour) but NOT the text glyphs. Every
-        // character is drawn as dots by drawLitDots instead, so digits (or any text with a
-        // visible foreground colour) cannot render as black system-font glyphs on top of the
-        // dot matrix.
-        if let layoutManager = layoutManager {
-            let glyphRange = layoutManager.glyphRange(forBoundingRect: dirtyRect, in: textContainer!)
-            layoutManager.drawBackground(forGlyphRange: glyphRange, at: .zero)
-        }
+        // Draw panel colour + dot field, but NOT text glyphs. Every character is drawn as dots
+        // by drawLitDots instead, so digits (or any text with a visible foreground colour)
+        // cannot render as black system-font glyphs on top of the dot matrix.
+        palette.panel.setFill()
+        dirtyRect.fill()
+        let scale = NSGraphicsContext.current.map { GlyphMatrix.deviceScale(of: $0.cgContext) } ?? 1
+        GlyphMatrix.drawField(in: dirtyRect, metrics: metrics, colour: fieldColour(for: scale))
+
         guard let context = NSGraphicsContext.current?.cgContext else { return }
+        // Selection highlight drawn at cell positions so it aligns exactly with the dots.
+        drawSelection(in: dirtyRect, into: context)
         drawBloom(in: dirtyRect, into: context)
         drawLitDots(in: dirtyRect, into: context)
         drawEmoji(in: dirtyRect, into: context)
         drawCaret(in: dirtyRect, into: context)
     }
 
-    /// NSLayoutManager calls textView.drawGlyphs(forGlyphRange:at:) directly during
-    /// displayGlyphs — bypassing NSTextView.draw(_:). Suppress it here so no text glyphs
-    /// (digits or otherwise) ever render on top of the dot matrix.
-    override func drawGlyphs(forGlyphRange glyphRange: NSRange, at origin: NSPoint) {
-        // Intentionally empty: drawLitDots paints the matrix instead.
+    /// Draws selection highlight over each selected character's cell, aligned to the dot matrix
+    /// so the blue bar sits exactly behind the dots.
+    private func drawSelection(in dirtyRect: NSRect, into context: CGContext) {
+        guard let layoutManager, let textContainer, let textStorage else { return }
+        let selectedRange = self.selectedRange()
+        guard selectedRange.length > 0 else { return }
+
+        context.setFillColor(NSColor.selectedTextBackgroundColor.cgColor)
+
+        walkCharacters(in: dirtyRect) { character, location, style, decor, tint, colour, origin in
+            guard location >= selectedRange.location,
+                  location < selectedRange.location + selectedRange.length else { return }
+            let cellRect = NSRect(x: origin.x, y: origin.y,
+                                  width: metrics.cellWidth, height: metrics.cellHeight)
+            if cellRect.intersects(dirtyRect) {
+                context.fill(cellRect)
+            }
+        }
     }
 
     // MARK: The bloom
