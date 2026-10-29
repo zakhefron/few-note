@@ -357,8 +357,14 @@ enum GlyphMatrix {
 /// `drawLitDots` instead, so digits (or any text with a visible foreground colour) cannot
 /// render as glyphs on top of the dot matrix.
 final class SilentLayoutManager: NSLayoutManager {
+    /// The characters are drawn as dots by `drawLitDots`, never as text glyphs. Suppress both
+    /// entry points so digits (or any text with a visible foreground colour) cannot render on
+    /// top of the dot matrix.
     override func drawGlyphs(forGlyphRange glyphRange: NSRange, at origin: NSPoint) {
-        // Intentionally empty: drawLitDots paints the matrix instead.
+        // Intentionally empty.
+    }
+    override func drawGlyph(at glyphPoint: NSPoint, forGlyphAt glyphIndex: Int) {
+        // Intentionally empty.
     }
 }
 
