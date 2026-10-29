@@ -673,6 +673,7 @@ final class GlyphMatrixTextView: NSTextView {
         heldNote = nil
         refreshCaretCell()
         needsDisplay = true
+        clearForegroundColours()
     }
 
     /// Shows a note being struck out: everything up to `count` is lit, and nothing after it is
@@ -871,6 +872,10 @@ final class GlyphMatrixTextView: NSTextView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
+        // Make sure no run carries a visible foreground colour: every character is drawn as dots,
+        // so the text layer itself must stay invisible. This is the last line of defence for text
+        // that was pasted in or imported from RTF with a visible colour.
+        clearForegroundColours()
         // Background (panel + dot field), selection highlight and the invisible text all come from
         // the text system; the bloom and the lit dots are ours.
         super.draw(dirtyRect)
