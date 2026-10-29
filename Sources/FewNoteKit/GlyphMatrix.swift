@@ -357,14 +357,11 @@ enum GlyphMatrix {
 /// `drawLitDots` instead, so digits (or any text with a visible foreground colour) cannot
 /// render as glyphs on top of the dot matrix.
 final class SilentLayoutManager: NSLayoutManager {
-    /// The characters are drawn as dots by `drawLitDots`, never as text glyphs. Suppress both
-    /// entry points so digits (or any text with a visible foreground colour) cannot render on
+    /// The characters are drawn as dots by `drawLitDots`, never as text glyphs. Suppress glyph
+    /// drawing entirely so digits (or any text with a visible foreground colour) cannot render on
     /// top of the dot matrix.
-    override func drawGlyphs(forGlyphRange glyphRange: NSRange, at origin: NSPoint) {
-        // Intentionally empty.
-    }
-    override func drawGlyph(at glyphPoint: NSPoint, forGlyphAt glyphIndex: Int) {
-        // Intentionally empty.
+    override func drawGlyphs(forGlyphRange glyphRange: NSRange, in layoutContainer: NSTextContainer) {
+        // Intentionally empty: drawLitDots paints the matrix instead.
     }
 }
 
@@ -899,12 +896,6 @@ final class GlyphMatrixTextView: NSTextView {
         drawLitDots(in: dirtyRect, into: context)
         drawEmoji(in: dirtyRect, into: context)
         drawCaret(in: dirtyRect, into: context)
-    }
-
-    /// The characters are drawn as dots, never as text glyphs. Suppress glyph drawing entirely so
-    /// digits (or any text with a visible foreground colour) cannot render on top of the matrix.
-    override func drawGlyphs(forGlyphRange glyphRange: NSRange, at origin: NSPoint) {
-        // Intentionally empty: drawLitDots paints the matrix instead.
     }
 
     // MARK: The bloom
