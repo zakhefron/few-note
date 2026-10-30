@@ -69,15 +69,15 @@ printf '  %sthe dot-matrix notepad for macOS · builds from source · MIT%s\n\n'
 
 # ---- toolchain ----------------------------------------------------------
 begin "Toolchain"
-if xcodebuild -version >/dev/null 2>&1; then
+if swift --version >/dev/null 2>&1; then
     SWIFT=$(swift --version 2>/dev/null | head -1 | sed 's/^Swift version //;s/^Apple Swift version /Swift /;s/ (swiftlang.*//')
     [ -n "$SWIFT" ] || fail "the Swift toolchain is not installed."
-    XCV=$(xcodebuild -version 2>/dev/null | head -1)
-    printf '%s  %s%s\n' "$XCV" "$SWIFT" "$RESET"
+    printf '  %s%s%s\n' "$SWIFT" "$RESET"
     BUILD_FROM_SOURCE=1
 else
-    printf 'Command Line Tools only - will download a prebuilt build%s\n' "$RESET"
-    BUILD_FROM_SOURCE=0
+    fail "the Swift toolchain is not installed.
+  Install it with Xcode Command Line Tools:  xcode-select --install
+  Or download Xcode from the Mac App Store."
 fi
 
 if [ "${BUILD_FROM_SOURCE:-0}" = "1" ]; then
@@ -132,49 +132,13 @@ T=$(( $(date +%s) - START ))
 finish "Build ($CONFIG) — the only slow step" "$T" \
     'first install builds once; afterwards this is seconds'
 
-
-else
-# ---- download prebuilt (no Xcode) --------------------------------------
-RELEASE_URL="https://github.com/zakhefron/few-note/releases/latest/download/FewNote.zip"
-begin "Downloading prebuilt build…"
-START=$(date +%s)
-TMPZIP="$CACHE/FewNote.zip"
-rm -f "$TMPZIP"
-curl -fsSL "$RELEASE_URL" -o "$TMPZIP" &
-DLBPID=$!
-spin "$DLBPID" &
-SPINPID=$!
-if ! wait "$DLBPID"; then
-    kill "$SPINPID" 2>/dev/null
-    wait "$SPINPID" 2>/dev/null
-    printf '\r\033[K'
-    fail "could not download the prebuilt build (404 = no release published yet).
-  Either install Xcode to build from source, or ask the maintainer to run
-  ./scripts/package.sh and upload build/FewNote.zip to GitHub Releases."
-fi
-kill "$SPINPID" 2>/dev/null
-wait "$SPINPID" 2>/dev/null
-    printf '\r\033[K'
-rm -rf "$CACHE/FewNote.app"
-unzip -q "$TMPZIP" -d "$CACHE" || fail "could not extract the build."
-rm -f "$TMPZIP"
-T=$(( $(date +%s) - START ))
-finish "Downloaded prebuilt build" "$T" "no Xcode needed"
-fi
-
 # ---- install ------------------------------------------------------------
 begin "Installing…"
 START=$(date +%s)
 rm -rf /Applications/FewNote.app \
   || fail "could not remove the old app — quit FewNote if it is running, then rerun the installer"
-if [ "${BUILD_FROM_SOURCE:-0}" = "1" ]; then
-    cp -R "$CACHE/build/FewNote.app" /Applications/ \
-      || fail "could not copy the app to /Applications — try rerunning with: sudo sh"
-else
-    cp -R "$CACHE/FewNote.app" /Applications/ \
-      || fail "could not copy the app to /Applications — try rerunning with: sudo sh"
-    xattr -dr com.apple.quarantine /Applications/FewNote.app 2>/dev/null || true
-fi
+cp -R "$CACHE/build/FewNote.app" /Applications/ \
+  || fail "could not copy the app to /Applications — try rerunning with: sudo sh"
 T=$(( $(date +%s) - START ))
 finish "Installed → /Applications" "$T"
 
