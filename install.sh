@@ -131,6 +131,7 @@ printf '\r\033[K'
 T=$(( $(date +%s) - START ))
 finish "Build ($CONFIG) — the only slow step" "$T" \
     'first install builds once; afterwards this is seconds'
+fi
 
 # ---- install ------------------------------------------------------------
 begin "Installing…"
