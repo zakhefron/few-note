@@ -511,6 +511,7 @@ public enum GlyphFont {
     public static func isEmoji(_ character: Character) -> Bool {
         character.unicodeScalars.contains { $0.properties.isEmoji }
             && !character.unicodeScalars.allSatisfy { $0.value < 0x20 }
+            && !character.isASCII
     }
 
     public static func litDots(for character: Character) -> [Dot] {

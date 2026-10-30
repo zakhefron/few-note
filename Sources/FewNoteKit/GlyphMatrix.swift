@@ -643,10 +643,17 @@ final class GlyphMatrixTextView: NSTextView {
     /// styled or the text changes (typing, paste, import).
     private func clearForegroundColours() {
         guard let textStorage, textStorage.length > 0 else { return }
+        // Clear any foreground colour that would cause system glyphs to render instead of dots.
+        // This covers digits (0-9), any pasted text with colour, and all other characters.
         let whole = NSRange(location: 0, length: textStorage.length)
         textStorage.enumerateAttributes(in: whole, options: []) { attributes, range, _ in
+            // Suppress any visible foreground colour: the matrix draws with lit dots, not text.
             if let color = attributes[.foregroundColor] as? NSColor, color.alphaComponent > 0 {
                 textStorage.addAttribute(.foregroundColor, value: NSColor.clear, range: range)
+            }
+            // Also suppress any background colour that could affect cell rendering.
+            if let color = attributes[.backgroundColor] as? NSColor, color.alphaComponent > 0 {
+                textStorage.addAttribute(.backgroundColor, value: NSColor.clear, range: range)
             }
         }
     }
@@ -1116,9 +1123,7 @@ final class GlyphMatrixTextView: NSTextView {
         let lit = litCount ?? Int.max
 
         walkCharacters(in: viewRect) { character, location, style, decor, tint, colour, origin in
-            // Emoji are drawn as the real glyph, not as dots, so they take no part in the bloom.
             guard !GlyphFont.isEmoji(character) else { return }
-            // What has not been struck yet takes no part in the bloom either.
             guard location < lit else { return }
             let strike = Strike(style: style, colour: colour, decor: decor)
             let path: CGMutablePath
